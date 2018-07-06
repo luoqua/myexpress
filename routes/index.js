@@ -205,8 +205,13 @@ router.get('/export_data_site',function(req,res) {
 })
 
 
-router.post('get_site_data',function(req,res) {
+router.post('/get_site_data_lat',function(req,res) {
 	
+	var require_data = require("../public/data_site_now_lat.js");
+
+	require_data = JSON.parse(require_data);
+
+	res.json({ret_code: 0, ret_msg:require_data});
 })
 
 

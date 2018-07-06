@@ -22,13 +22,21 @@
 <script type="text/javascript">
 	// 百度地图API功能
 	var map = new BMap.Map("allmap");						// 创建地图实例  
-	var point = new BMap.Point(116.331398,39.897445);		// 创建中心点坐标
-	map.centerAndZoom(point,12);							// 初始化地图，设置中心点坐标和地图级别
+	var point = new BMap.Point(120.343373,31.540212);		// 创建中心点坐标
+	map.centerAndZoom(point,15);							// 初始化地图，设置中心点坐标和地图级别
+	var marker = new BMap.Marker(point);  // 创建标注
+	map.addOverlay(marker);               // 将标注添加到地图中
+	//marker.setAnimation(BMAP_ANIMATION_BOUNCE); //跳动的动画
 	// 创建地址解析器实例
 	var myGeo = new BMap.Geocoder();	
 
-	
-	
+	var bs = map.getBounds();   //获取可视区域
+	var bssw = bs.getSouthWest();   //可视区域左下角
+	var bsne = bs.getNorthEast();   //可视区域右上角
+
+
+
+
 	$(document).ready(function(){
 		$("button").click(function(){
 			$.ajax({url:"http://localhost:3000/getData",
@@ -93,14 +101,60 @@
 		});
 	});				
 
-$.ajax({
-	url:"http://localhost:3000/export_data_site",
-	async:true,
-	success:function(result){
+	function get_site_data(bssw,bsne) {
+	
+		$.ajax({
+			url:"http://localhost:3000/get_site_data_lat",
+			async:true,
+			type:'POST',
+			success:function(result){
+				var result_lat_lng = result.ret_msg;
+				// 进行lat的过滤
+				result_lat_lng = result_lat_lng.filter(function(item) {
+					return item.lat >= bssw.lat && item.lat <= bsne.lat;
+				})
 
+				//进行lng的排序
+				result_lat_lng = result_lat_lng.sort(function(a,b) {
+					return a.lng - b.lng
+				})
+				//进行lng的过滤
+				result_lat_lng = result_lat_lng.filter(function(item) {
+					return item.lng >= bssw.lng && item.lng <= bsne.lng;
+				})
+				console.log(result_lat_lng)
+				result_lat_lng.forEach(function(item) {
+					addMarker(item)
+				})
+			}
+		})	
 	}
-})	
+function addMarker(point){
+  var point = new BMap.Point(point.lng, point.lat);	
+  var marker = new BMap.Marker(point);
+  map.addOverlay(marker);
+}
 
+function filterRepeat(object_arr) {
+	var result = {};
+	var result_arr = [];
+	for( var i = 0;i<object_arr.length;i++){
+		if( result[object_arr[i].address] ){
+			result_arr.push(object_arr[i])
+		}
+	}
+}
+get_site_data(bssw,bsne)
+map.addEventListener("zoomend", function(){
+	get_site_data(bssw,bsne)
+});
+
+map.addEventListener("dragend", function(){    
+var bs = map.getBounds();   //获取可视区域
+var bssw = bs.getSouthWest();   //可视区域左下角
+var bsne = bs.getNorthEast();   //可视区域右上角
+get_site_data(bssw,bsne)
+});
 </script>
 
 </body>
