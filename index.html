@@ -6,12 +6,8 @@
 <script src="https://cdn.bootcss.com/jquery/1.10.2/jquery.min.js">
 </script>
 <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=D9b45bc6f98deafc489e9ac1bc7f7612"></script>
-<script type="text/javascript" src="myPromise.js"></script>
 <style>
-	body, html {width: 100%;height: 100%;margin:0;font-family:"微软雅黑";}
-		#allmap{width:100%;height:500px;}
-		p{margin-left:5px; font-size:14px;}
-
+	body, html,#allmap {width: 100%;height: 500px;overflow: hidden;margin:0;font-family:"微软雅黑";}
 </style>
 </head>
 <body>
@@ -24,9 +20,9 @@
 
 <div id="allmap"></div>
 <script type="text/javascript">
-	// 百度地图API功能,
+	// 百度地图API功能
 	var map = new BMap.Map("allmap");						// 创建地图实例  
-	var point = new BMap.Point(120.255749,31.604226);		// 创建中心点坐标
+	var point = new BMap.Point(120.343373,31.540212);		// 创建中心点坐标
 	map.centerAndZoom(point,15);							// 初始化地图，设置中心点坐标和地图级别
 	var marker = new BMap.Marker(point);  // 创建标注
 	map.addOverlay(marker);               // 将标注添加到地图中
@@ -41,18 +37,11 @@
 
 
 
-  /*local.search("无锡市"+address_item.address)
-
-            local.setSearchCompleteCallback(function (searchResults) {
-
-              var point_address = searchResults.Br.length > 0 ? searchResults.Br[0].point : null;*/
-
-
 	$(document).ready(function(){
 		$("button").click(function(){
 			$.ajax({url:"http://localhost:3000/getData",
 				async:true,
-				type:"POST",
+				type:'POST',
 				data:{
 					status:1,
 				},
@@ -65,41 +54,33 @@
 				
 					
 				address_array.forEach(function(item) {
-
-            		var local = new BMap.LocalSearch(map);
 				// 将地址解析结果显示在地图上,并调整地图视野
-  					var promise = new Promise(function(resolve,rejected) {
-  						local.setSearchCompleteCallback(function (searchResults) {
+					var promise = new Promise(function(resolve,rejected) {
+						myGeo.getPoint(item.address, function(point_address){
+							var address_info = {};
+							var point_address= point_address;
+							if(point_address === null){
+								point_address = {};
+								point_address.lat = null;
+								point_address.lng = null;
+							}
+							
+							address_info['lat'] = point_address.lat;
+							address_info['lng'] = point_address.lng;
+							address_info['number'] = item.number;
+							address_info['address'] = item.address;
+							
 
-               				 var point_address = searchResults.Br.length > 0 ? searchResults.Br[0].point : null;
-  							var address_info = {};
-  							var point_address= point_address;
-  							if(point_address === null){
-  								point_address = {};
-  								point_address.lat = null;
-  								point_address.lng = null;
-  							}
-  							
-  							address_info['lat'] = point_address.lat;
-  							address_info['lng'] = point_address.lng;
-  							address_info['number'] = item.number;
-  							address_info['address'] = item.address;
-  							address_info['area'] = item.area;
-  							console.log(address_info)
-  							resolve(address_info)
-  							// map.centerAndZoom(point, 16);
-  							// map.addOverlay(new BMap.Marker(point));
-  						});
-
-             
-  					})		
-           			local.search("无锡市"+item.address)
-					 promise_arr.push(promise)
+							resolve(address_info)
+							// map.centerAndZoom(point, 16);
+							// map.addOverlay(new BMap.Marker(point));
+						}, "无锡市");
+					})		
+					promise_arr.push(promise)
 				})
 					
 
 				Promise.all(promise_arr).then(function(data) {
-       
 					data = JSON.stringify(data)
 
 					$.ajax({
@@ -108,6 +89,8 @@
 						type:"POST",
 						data:{
 							status:1,
+						},
+						data:{
 							lat_lng_arr:data
 						},
 						success:function(result){
@@ -122,8 +105,9 @@
 	function get_site_data(bssw,bsne) {
 	
 		$.ajax({
-			url:"http://localhost:3000/export_data_site",
+			url:"http://192.168.1.144:3000/get_site_data_lat",
 			async:true,
+			type:'POST',
 			success:function(result){
 				var result_lat_lng = result.ret_msg;
 				// 进行lat的过滤
@@ -162,7 +146,7 @@ function filterRepeat(object_arr) {
 	}
 }
 get_site_data(bssw,bsne)
-/*map.addEventListener("zoomend", function(){
+map.addEventListener("zoomend", function(){
 	get_site_data(bssw,bsne)
 });
 
@@ -171,10 +155,7 @@ var bs = map.getBounds();   //获取可视区域
 var bssw = bs.getSouthWest();   //可视区域左下角
 var bsne = bs.getNorthEast();   //可视区域右上角
 get_site_data(bssw,bsne)
-});*/
-
-
-
+});
 </script>
 
 </body>

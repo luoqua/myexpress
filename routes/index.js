@@ -12,6 +12,9 @@ var fs = require('fs');
 var Cs_site = require('../models/ConstructSite.js')
 
 
+var formidable = require("formidable");
+
+
 
 router.get('/handleExcel',function(req,res){
 
@@ -101,29 +104,31 @@ router.get('/handleExcel',function(req,res){
 })
 
 
-router.get('/getData',function(req,res) {
 
+
+router.post('/getData',function(req,res) {
+
+	
 
 	let address_result = [];
 	let address
 	var reg = /^[\u4e00-\u9fa5]+[a-z|A-Z]*[\u4e00-\u9fa5]+/g
 	var result
-	var construct_status = req.query.status;
+	var construct_status = req.body.status;
 	
 	if( construct_status !== undefined){
 		Cs_site.find({ construct_status: construct_status },{phone_number:0},function(err,comment) {
 			
 			comment.forEach(function(item,index){
 				address = item.address;
-
+				area = item.area;
 				result = address.match(reg);
 
 				address_result.push(
-					{number:item.number,address:result[0]})
+					{number:item.number,address:result[0],area:area})
 			})
-
 			res.json({ret_code: 0, ret_msg: address_result});
-		}).limit(10);
+		});
 	}else{
 		res.json({ret_code: 1, ret_msg: "请传工地类别status"});
 	}
@@ -134,7 +139,8 @@ router.post('/saveData',function(req,res) {
 	
 	var lat_lng_arr = JSON.parse(req.body.lat_lng_arr)
 	
-	if(req.body.status === 1){
+	var status = JSON.parse(req.body.status)
+	if(status === 1){
 		var Lnglat = require('../models/Lnglatdata.js')
 		Lnglat.insertMany(lat_lng_arr,function(err, docs) {
 			if(err) console.log(err);
@@ -154,8 +160,8 @@ router.post('/saveData',function(req,res) {
 })
 
 
-router.get('/export_data_site',function(req,res) {
-
+router.get('/export_data_site_now',function(req,res) {
+	
     var LnglatNow = require('../models/LnglatdataNow.js')
     LnglatNow.find({},function(err, docs) {
     	
@@ -204,13 +210,47 @@ router.get('/export_data_site',function(req,res) {
     }).sort({ lng:1 });
 })
 
+router.get('/export_data_site',function(req,res) {
+	
+    var LnglatNow = require('../models/Lnglatdata.js')
+    LnglatNow.find({},function(err, docs) {
+    	
+    	var path_now = path.join(__dirname,"../public/data_site_lat.js");
+
+    	docs = docs.filter(function(item,index) {
+    		return item.lnt !== null && item.lng !== null;
+    	})
+
+    	var result_strings =  JSON.stringify(docs)
+
+    	var content = `
+			const lat_lng_arr = '${result_strings}';
+		
+			module.exports = lat_lng_arr;
+			`
+		fs.writeFile(path_now, content, (err) => {
+		  if (err) throw err;
+		  console.log('文件已保存！');
+		});
+		
+		
+    }).sort({ lat:1 });
+})
+
 
 router.post('/get_site_data_lat',function(req,res) {
+	
+	var require_data = require("../public/data_site_lat.js");
+
+	require_data = JSON.parse(require_data);
+	res.json({ret_code: 0, ret_msg:require_data});
+})
+
+router.post('/get_site_now_lat',function(req,res) {
 	
 	var require_data = require("../public/data_site_now_lat.js");
 
 	require_data = JSON.parse(require_data);
-
 	res.json({ret_code: 0, ret_msg:require_data});
 })
 

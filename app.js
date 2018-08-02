@@ -8,6 +8,7 @@ var session = require('express-session');// 引入session
 var FileStore = require('session-file-store')(session);    // 引入session存储文件
 
 
+
 var mongoose = require('./config/mongoose.js');		//mongodb数据库
 var db = mongoose()
 
@@ -18,6 +19,18 @@ var usersRouter = require('./routes/users');
 var app = express();
 var identityKey = 'skey';
 
+//设置跨域访问  
+app.all('*', function(req, res, next) {  
+    res.header("Access-Control-Allow-Origin", "*");  
+    res.header("Access-Control-Allow-Headers", "*");  
+    res.header("Access-Control-Allow-Methods","PUT,POST,GET,DELETE,OPTIONS");  
+    res.header("X-Powered-By",' 3.2.1')  
+    if(req.method === 'OPTIONS'){
+      res.sendStatus(200)
+    }else{
+      next();  
+    }
+}); 
 // 设置session
 app.use(session({
     name: identityKey,
@@ -41,7 +54,7 @@ app.use('/users', usersRouter);
 
 app.use('/virtual',express.static('public'));
 
-
+ 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

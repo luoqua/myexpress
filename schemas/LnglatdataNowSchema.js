@@ -8,6 +8,7 @@ var LnglatdataNowSchema = new Schema({
 	lat:String,
 	number:{type:[String],unique:true},
 	address:String,
+	area:Number
 })
 
 module.exports = LnglatdataNowSchema
