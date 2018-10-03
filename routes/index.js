@@ -5,7 +5,7 @@ var User = require('../models/User.js')
 
 var path = require('path')
 
-var xlsx = require('node-xlsx');
+/*var xlsx = require('node-xlsx');*/
 
 var fs = require('fs');
 
@@ -16,92 +16,122 @@ var formidable = require("formidable");
 
 
 
-router.get('/handleExcel',function(req,res){
+   
 
-	var filename='./excel/test.xlsx';
+router.get('/getWeather',function(req,res){
+	var https = require("https");  
+	var iconv = require("iconv-lite");  
+	var url="	https://free-api.heweather.com/s6/weather/forecast?location=CN101010100&key=2a8721d3909f43bf8ed3a4a6d91df0ca&lang=en&unit=i";  
+	var res_json = res;
+    https.get(url, function (res) {  
+    	var resData = "";
+    	res.on("data",function(data){
+            resData += data;
+        });
+        res.on("end", function() {
+            var result = JSON.parse(resData);
+			res_json.json({ret_code: 0, ret_msg: result});
+        });
+    }).on("error", function (err) {  
+        Logger.error(err.stack)  
+        callback.apply(null);  
+    });  
+})
+
+
+
+router.get('/handleCityExcel',function(req,res){
+	var filename='./excel/china-city-list.xlsx';
 
 	var obj = xlsx.parse(filename);	//配置excel的路径
 
-	//var excelObj=obj[0].data;//excelObj是excel文件里第一个sheet文档的数据，obj[i].data表示excel文件第i+1个sheet文档的全部内容
+	var i=0,j=0,k=0,prevI,prevJ,prevK,curI,curJ,curK;
 
-	var object_filed = [
-	    		"number",
-	    		"address",
-	    		"yz_name",
-	    		"phone_number",
-	    		"area",
-	    		"area_range",
-	    		"project_time",
-	    		"district",
-	    		"contract_cost",
-	    		"designer",
-	    		"engineering_supervision",
-	    		"project_date",
-	    		"expected_date",
-	    		"project_finsh_date"
-	    	]
-	var result = []
-	var construct_progress = ["一部在建","二部在建","三部在建","四部在建"];
-        
-    var construct_complete = ["一部完工","二部完工","三部完工","四部完工"];
+	var result = obj[0].data;
 
-    var result_dd;
-	for( var i =0;i< obj.length;i++){
+	var city_result=[]
 
-		let construct_name = obj[i].name;
+	result.forEach(function(item,index){
+        if(index >= 2){
+            curI = item[0].substr(item[0].length-2)
+            
+            curJ = item[0].substr(0,7)
+            
+            curK = item[0].substr(0,9)
 
-		let construct_status = construct_progress.indexOf(construct_name) > -1 
-								? 0 
-								: ( construct_complete.indexOf(construct_name) > -1 
-									? 1
-									: -1
-									)
-		
-		if( construct_status !== -1 ){
+            
+            if( curJ !== prevJ && index !==2){
+                i++;
+                k=0
+            }
+            if( curI === '00'){
+                var area = {
+                    province:item[7],
+                    city:item[2],
+                    child:[]
+                }
+                if(!Array.isArray(city_result[i])){
+                    city_result[i] = []
+                }
+                city_result[i].push(area)
+            }else if( curI ==='01'){
+                var area = {
+                    province:item[7],
+                    city:item[2],
+                    child:[]
+                }
+                if(!Array.isArray(city_result[i])){
+                    city_result[i] = []
+                }
+                city_result[i].push(area)
 
-			let excelObj = obj[i].data;
+            }else{
+                var area = {
+                    city:item[9],
+                    dis:item[2],
+                }
 
-			excelObj.forEach(function(item,index){
-				if( index > 1 && item.length > 1){
-					let [ 
-			    		,
-			    		number,
-			    		address,
-			    		yz_name,
-			    		phone_number,
-			    		area,
-			    		area_range,
-			    		project_time,
-			    		district,
-			    		contract_cost,
-			    		designer,
-			    		engineering_supervision,
-			    		project_date,
-			    		expected_date,
-			    		project_finsh_date
-		    		]= item;
-		    		var result_ob = {}
-		    		object_filed.forEach(function(item) {
-			    		result_ob[item] = eval(item)
-			    	})
+                curK = curK.substr(curK.length-1)
 
-			    	result_ob['construct_status'] = construct_status;
-			    	
-			    	result.push(result_ob)
-				}
-			})
-		}
-	}
+                if(curK === '0') curK = 10
+               	
+                city_result[i][curK-1].child.push(area)
+            }
 
-	Cs_site.insertMany(result, function(err, docs){
-	        if(err) console.log(err);
-	        console.log('保存成功：' + docs);
+            prevJ = item[0].substr(0,7)
+            prevK = item[0].substr(0,9)
+
+        }
+    })
+
+	var path_now = path.join(__dirname,"../public/china-city-list.js");
+
+    
+
+	var result_strings =  JSON.stringify(city_result)
+
+	var content = `
+		const lat_lng_arr = '${result_strings}';
+	
+		module.exports = lat_lng_arr;
+		`
+	fs.writeFile(path_now, content, (err) => {
+	  if (err) throw err;
+	  console.log('文件已保存！');
 	});
 
-	res.json({ret_code: 0, ret_msg: result});
-
-
+	res.json({ret_code: 0, ret_msg: city_result});
 })
+
+
+router.get('/china_city_list',function(req,res) {
+	
+	var require_data = require("../public/china-city-list.js");
+
+	require_data = JSON.parse(require_data);
+	res.json({ret_code: 0, ret_msg:require_data});
+})
+
 
 
 
