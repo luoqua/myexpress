@@ -19,7 +19,7 @@ var identityKey = 'skey';
 
 //设置跨域访问  
 app.all('*', function(req, res, next) {  
-  console.log(req.headers)
+
     res.header("Access-Control-Allow-Origin", "*");  
     res.header("Access-Control-Allow-Headers", "X-Requested-With, accept, origin, content-type");  
     res.header("Access-Control-Allow-Methods","PUT,POST,GET,DELETE,OPTIONS");  

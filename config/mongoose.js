@@ -5,7 +5,7 @@ const config = require('./config');
 
 module.exports = ()=>{
 
-	mongoose.connect(config.mongodb);//连接mongodb数据库
+	mongoose.connect(config.mongodb,{useNewUrlParser:true});//连接mongodb数据库
 
 	var db = mongoose.connection;
 	db.on('error',(err) => {

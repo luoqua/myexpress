@@ -19,7 +19,19 @@
 <button>修改内容</button>
 
 <div id="allmap"></div>
+<div>
+	上传文件：
+	<input type="file" name="file" id="fileId" onChange="getFile()" />
+</div>
 <script type="text/javascript">
+	function getFile() {
+		var file = document.getElementById('fileId').filse[0];
+		var fileName = file.name; //获取文件名
+		console.log(file)
+
+	}
+</script>
+<!-- <script type="text/javascript">
 	// 百度地图API功能
 	var map = new BMap.Map("allmap");						// 创建地图实例  
 	var point = new BMap.Point(120.343373,31.540212);		// 创建中心点坐标
@@ -156,7 +168,11 @@ var bssw = bs.getSouthWest();   //可视区域左下角
 var bsne = bs.getNorthEast();   //可视区域右上角
 get_site_data(bssw,bsne)
 });
-</script>
+</script> -->
 
+
+<script>
+	
+</script>
 </body>
 </html>

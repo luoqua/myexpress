@@ -11,12 +11,60 @@ var fs = require('fs');
 
 var Cs_site = require('../models/ConstructSite.js')
 
-
 var formidable = require("formidable");
 
+const crypto = require('crypto');
+
+router.get('/signature',function(req,res) {
+	try{
+
+		const AccessKeyID = "LTAIxUum85IF6PwL";
+		const AccessKeySecret = "Z7LLx67lKfne9CJWTSJc9m91cPBUhl"; 
+		const host = 'http://simple-common.oss-cn-hangzhou.aliyuncs.com'
+		let now = new Date();
+		now = now.valueOf()
+		now = now + 30 * 24 * 60 * 60 * 1000
+		now = new Date(now)
+		let expire = 30;
+		// 设置条件
+		let conditions = [];
+		// 设置文件大小范围
+		let condition = ['content-length-range',0,1048576000];
+		// 设置上传目录
+		let dir = 'upload/'
+		let dir_condition = ['starts-with','$key',dir]
+		let expiration	// 设置过期时间
+
+		Array.prototype.push.call(conditions,condition,dir_condition)
+		now.setHours(now.getHours(), now.getMinutes() - now.getTimezoneOffset())
+		now.setSeconds(now.getSeconds()+expire)
+
+		expiration = now.toISOString().replace(/\..+/,'')+'Z'
+	
+		let policy = {
+			expiration:expiration,
+			conditions:conditions
+		}
+
+		let base64_policy = new Buffer(JSON.stringify(policy)).toString('base64');
+		let signature = crypto.createHmac('sha1', AccessKeySecret).update(base64_policy).digest().toString('base64');
+
+		let response = {
+			policy: base64_policy,
+			OSSAccessKeyId: AccessKeyID,
+			Signature: signature,
+			expire: expiration
+		}
+
+		res.json({code: 0, data: response});
+
+	}catch(e){
+		console.log(e)
+	}
 
 
-   
+})
+
 
 router.get('/getWeather',function(req,res){
 	var https = require("https");  
@@ -30,7 +78,7 @@ router.get('/getWeather',function(req,res){
         });
         res.on("end", function() {
             var result = JSON.parse(resData);
-			res_json.json({ret_code: 0, ret_msg: result});
+			res_json.json({code: 0, data: result});
         });
     }).on("error", function (err) {  
         Logger.error(err.stack)  
@@ -120,7 +168,7 @@ router.get('/handleCityExcel',function(req,res){
 	  console.log('文件已保存！');
 	});
 
-	res.json({ret_code: 0, ret_msg: city_result});
+	res.json({code: 0, data: city_result});
 })
 
 
@@ -129,7 +177,7 @@ router.get('/china_city_list',function(req,res) {
 	var require_data = require("../public/china-city-list.js");
 
 	require_data = JSON.parse(require_data);
-	res.json({ret_code: 0, ret_msg:require_data});
+	res.json({code: 0, data:require_data});
 })
 
 
@@ -157,10 +205,10 @@ router.post('/getData',function(req,res) {
 				address_result.push(
 					{number:item.number,address:result[0],area:area})
 			})
-			res.json({ret_code: 0, ret_msg: address_result});
+			res.json({code: 0, data: address_result});
 		});
 	}else{
-		res.json({ret_code: 1, ret_msg: "请传工地类别status"});
+		res.json({code: 1, data: "请传工地类别status"});
 	}
 })
 
@@ -177,7 +225,7 @@ router.post('/saveData',function(req,res) {
 		    console.log('保存成功：' + docs);
 		})
 		
-		res.json({ret_code: 0, ret_msg:lat_lng_arr});
+		res.json({code: 0, data:lat_lng_arr});
 	}else{
 		var LnglatNow = require('../models/LnglatdataNow.js')
 		LnglatNow.insertMany(lat_lng_arr,function(err, docs) {
@@ -185,7 +233,7 @@ router.post('/saveData',function(req,res) {
 		    console.log('保存成功：' + docs);
 		})
 
-		res.json({ret_code: 0, ret_msg:lat_lng_arr});	
+		res.json({code: 0, data:lat_lng_arr});	
 	}
 })
 
@@ -273,7 +321,7 @@ router.post('/get_site_data_lat',function(req,res) {
 	var require_data = require("../public/data_site_lat.js");
 
 	require_data = JSON.parse(require_data);
-	res.json({ret_code: 0, ret_msg:require_data});
+	res.json({code: 0, data:require_data});
 })
 
 router.post('/get_site_now_lat',function(req,res) {
@@ -281,7 +329,7 @@ router.post('/get_site_now_lat',function(req,res) {
 	var require_data = require("../public/data_site_now_lat.js");
 
 	require_data = JSON.parse(require_data);
-	res.json({ret_code: 0, ret_msg:require_data});
+	res.json({code: 0, data:require_data});
 })
 
 
@@ -348,7 +396,7 @@ router.get('/submit',(req,res,next) => {
 					_id:doc._id,
 					username:doc.username
 				};
-				res.json({ret_code: 0, ret_msg: '登录成功'});
+				res.json({code: 0, data: '登录成功'});
 			}
 		}
 	})
