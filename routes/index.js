@@ -18,8 +18,8 @@ const crypto = require('crypto');
 router.get('/signature',function(req,res) {
 	try{
 
-		const AccessKeyID = "LTAIxUum85IF6PwL";
-		const AccessKeySecret = "Z7LLx67lKfne9CJWTSJc9m91cPBUhl"; 
+		const AccessKeyID = "your AccessKeyID";
+		const AccessKeySecret = "your AccessKeySecret"; 
 		const host = 'http://simple-common.oss-cn-hangzhou.aliyuncs.com'
 		let now = new Date();
 		now = now.valueOf()
